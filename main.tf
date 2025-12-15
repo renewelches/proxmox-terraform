@@ -54,7 +54,7 @@ resource "proxmox_virtual_environment_container" "open-webui-container" {
     inline = [
       "apt-get update",
       "apt-get uograde -y",
-      "docker run -d -p 80:8080 -e OLLAMA_BASE_URL=http://macmini.grumples.home:11434 -v open-webui:/app/backend/data --name open-webui --restart always ghcr.io/open-webui/open-webui:main"
+      "docker run -d -p 80:8080 -e OLLAMA_BASE_URL=${var.ollama_host} -v open-webui:/app/backend/data --name open-webui --restart always ghcr.io/open-webui/open-webui:main"
     ]
     connection {
       type  = "ssh"
