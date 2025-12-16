@@ -10,17 +10,20 @@ This configuration creates two Docker-enabled LXC containers:
    - 1 CPU core, 1GB RAM, 10GB storage
    - Runs on static IP with gateway routing
    - Automatically deploys Open WebUI Docker container
+   - Uses Ollama from a remote machine
 
 2. **n8n** (`n8n-container`) - Workflow automation platform
    - 2 CPU cores, 6GB RAM, 50GB storage
    - Runs on static IP with gateway routing
-   - Automatically deploys n8n Docker container with persistence
+   - Automatically deploys n8n Docker container with persistence and SQLLite
 
 ## Prerequisites
 
 - Terraform >= 1.0
 - Proxmox VE server with API access
-- **Custom Debian 13 Docker template** (`debian13-docker-template.tar.gz`) available in Proxmox local storage
+- **Custom Debian 13 Docker template** (`debian13-docker-template.tar.gz`) available in Proxmox local storage:
+   -- with **docker** installed and running and
+   -- with an **SSH key** for remote provisioning
 - Proxmox user/API token with appropriate permissions (see below)
 - SSH key loaded in ssh-agent for remote provisioning
 
@@ -47,7 +50,13 @@ pveum acl modify / --user terraform@pve --role PVEAdmin
 
 ### 2. Prepare the Container Template
 
-Ensure the Debian 13 Docker template exists:
+1. Create a template based of a running LXC container with docker installed and your ssh-key provisioned for the root user.
+2. Stop the container.
+3. Remove the network interface.
+4. `vzdump 100 --mode stop --compress gzip --dumpdir /var/lib/vz/template/cache`, replace `100` with the LXC conatiner id. 
+5. `cd /var/lib/vz/template/cache` and search for the tar.gz file with the time and the date of the execution of the `vzdump` command.
+6. Rename the file to `debian13-docker-template.tar.gz`
+7. Refresh the ui and you should see the `debian13-docker-template.tar.gz` under Datacenter -> your Node -> local (your node) -> CT Templates. Or verify template exists via terminal
 
 ```bash
 # Verify template exists in Proxmox
@@ -66,8 +75,8 @@ proxmox_node           = "pve"  # Your Proxmox node name
 proxmox_host_default_pwd = "your-secure-root-password"
 
 static_ips = {
-  open_webui = "192.168.86.100"  # Adjust to your network
-  n8n        = "192.168.86.101"
+  open_webui = "192.168.1.100"  # Adjust to your network
+  n8n        = "192.168.1.101"
 }
 ```
 
@@ -83,13 +92,21 @@ eval $(ssh-agent)
 ssh-add ~/.ssh/id_rsa
 ```
 
-### 5. Initialize Terraform
+### 5. Set up Environment Variables
+User Environment variables for 
+```bash
+TF_VAR_proxmox_api_token
+TF_VAR_proxmox_host_default_pwd
+```
+One way to set these variables on a Mac is by following [Securing Proxmox API Tokens with Apple Keychain](https://blog.renewelches.com/2025/12/09/proxmox-terraform-keychain/).
+
+### 6. Initialize Terraform
 
 ```bash
 terraform init
 ```
 
-### 6. Deploy Infrastructure
+### 7. Deploy Infrastructure
 
 ```bash
 # Preview changes
@@ -118,7 +135,7 @@ The containers will be created and the Docker containers will be automatically d
 
 ## File Structure
 
-```
+```bash
 .
 ├── README.md                    # This file
 ├── versions.tf                  # Provider version constraints (using bpg/proxmox provider)
@@ -133,37 +150,12 @@ The [main.tf](main.tf) file contains two LXC container resources:
 
 1. **open-webui-container** - Deploys [Open WebUI](https://github.com/open-webui/open-webui) connected to Ollama
    - Accessible at `http://<static_ip>:80`
-   - Connected to Ollama at `http://macmini.grumples.home:11434`
+   - Connected to Ollama at `http://<your ollam URL>:11434`
 
 2. **n8n-container** - Deploys [n8n](https://n8n.io) workflow automation
    - Accessible at `http://<static_ip>:5678`
    - Configured for America/New_York timezone
    - Persistent data storage with Docker volumes
-
-## Useful Commands
-
-```bash
-# Initialize and download providers
-terraform init
-
-# Validate configuration
-terraform validate
-
-# Format code
-terraform fmt
-
-# Plan changes
-terraform plan
-
-# Apply changes
-terraform apply
-
-# Destroy resources
-terraform destroy
-
-# Show current state
-terraform show
-```
 
 ## Troubleshooting
 
@@ -203,13 +195,8 @@ Verify the template exists in Proxmox storage:
 ls -la /var/lib/vz/template/cache/debian13-docker-template.tar.gz
 ```
 
-### Typo in Provisioner
-
-Note: There's a typo in [main.tf:56](main.tf#L56) - `apt-get uograde` should be `apt-get upgrade`. This won't break the deployment but should be fixed.
-
 ## Known Issues
 
-- [main.tf:56](main.tf#L56): Typo in `apt-get uograde` (should be `upgrade`)
 - Container provisioning requires working ssh-agent with loaded keys
 - Static IPs must be in the same subnet as the gateway
 

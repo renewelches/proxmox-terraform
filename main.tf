@@ -53,7 +53,7 @@ resource "proxmox_virtual_environment_container" "open-webui-container" {
   provisioner "remote-exec" {
     inline = [
       "apt-get update",
-      "apt-get uograde -y",
+      "apt-get upgrade -y",
       "docker run -d -p 80:8080 -e OLLAMA_BASE_URL=${var.ollama_host} -v open-webui:/app/backend/data --name open-webui --restart always ghcr.io/open-webui/open-webui:main"
     ]
     connection {
