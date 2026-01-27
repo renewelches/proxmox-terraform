@@ -149,7 +149,7 @@ resource "proxmox_virtual_environment_container" "searxng-container" {
       "mkdir ./config",
       "mv /tmp/settings.yml ./config/",
       # "docker run -d --dns=9.9.9.9 --restart unless-stopped -p 80:8080  -v ./config/:/etc/searxng/ -v ./data/:/var/cache/searxng/ searxng/searxng:latest"
-      "docker run -d --dns=9.9.9.9 --restart unless-stopped -p 80:8080  -v ./config/:/etc/searxng/ -v ./data/:/var/cache/searxng/ searxng/searxng:2026.1.11-cf74e1d9e"
+      "docker run -d --dns=9.9.9.9 --restart unless-stopped -p 80:8080  -v ./config/:/etc/searxng/ -v ./data/:/var/cache/searxng/ ghcr.io/searxng/searxng:2026.1.16-2d9f213ca"
     ]
     connection {
       type  = "ssh"
@@ -213,7 +213,7 @@ resource "proxmox_virtual_environment_container" "n8n-container" {
       "apt-get update",
       "apt-get upgrade -y",
       "docker volume create n8n_data",
-      "docker run -d --restart unless-stopped -it --rm --name n8n -p 5678:5678 -e GENERIC_TIMEZONE='America/New_York' -e TZ='America/New_York' -e N8N_ENFORCE_SETTINGS_FILE_PERMISSIONS=true -e N8N_RUNNERS_ENABLED=true -e N8N_SECURE_COOKIE=false -e DB_SQLITE_POOL_SIZE=5 -v n8n_data:/home/node/.n8n docker.n8n.io/n8nio/n8n"
+      "docker run -d --restart unless-stopped -it --name n8n -p 5678:5678 -e GENERIC_TIMEZONE='America/New_York' -e TZ='America/New_York' -e N8N_ENFORCE_SETTINGS_FILE_PERMISSIONS=true -e N8N_RUNNERS_ENABLED=true -e N8N_SECURE_COOKIE=false -e DB_SQLITE_POOL_SIZE=5 -v n8n_data:/home/node/.n8n docker.n8n.io/n8nio/n8n"
     ]
     connection {
       type  = "ssh"

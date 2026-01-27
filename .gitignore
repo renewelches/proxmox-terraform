@@ -29,3 +29,5 @@ terraform.log
 
 .DS_Store
 openwebui/docker.env.rendered
+
+ansible/inventory.yml
